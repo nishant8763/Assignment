@@ -4,6 +4,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import Login from './Login';
 import Dashboard from './Dashboard';
+import Maps from './Maps';
 // import DrawerMenu from './Navigation/DrawerMenu';
 // import Splash from './Pages/Splash';
 
@@ -21,6 +22,11 @@ const Router = () => {
         <Stack.Screen
           name="Dashboard"
           component={Dashboard}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="Maps"
+          component={Maps}
           options={{headerShown: false}}
         />
       </Stack.Navigator>

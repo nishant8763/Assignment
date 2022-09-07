@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {useEffect, useState, useRef} from 'react';
 import {
   Dimensions,
@@ -10,15 +11,26 @@ import {
   TouchableOpacity,
   Pressable,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
+import DeviceInfoModule from 'react-native-device-info';
 const {height, width} = Dimensions.get('screen');
 const OUTER_SIZE = width * 0.75;
 
 const Login = props => {
-  const [code, setCode] = useState('');
-  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('1234');
+  const [phone, setPhone] = useState('9538080000');
+  const [loader, setLoader] = useState(false);
+  const [deviceToken, setDeviceToken] = useState('');
+  const deviceId = DeviceInfoModule.getDeviceId();
   const codeDigitsArray = new Array(4).fill(0);
   const ref = useRef(null);
+  useEffect(() => {
+    DeviceInfoModule.getUniqueId().then(uniqueId => {
+      setDeviceToken(uniqueId);
+    });
+  }, []);
+
   const toDigitInput = (_value, idx) => {
     const emptyInputChar = ' ';
     const digit = code[idx] || emptyInputChar;
@@ -29,6 +41,31 @@ const Login = props => {
       </View>
     );
   };
+
+  const onLogin = () => {
+    setLoader(true);
+    fetch('http://staging.infosmart.co.in/mapp/infoinsure/services/login', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userName: phone,
+        password: code,
+        deviceId: deviceId,
+        deviceToken: deviceToken,
+      }),
+    })
+      .then(res => res.json())
+      .then(res => {
+        console.log(res);
+        AsyncStorage.setItem('user', JSON.stringify(res));
+        setLoader(false);
+        props.navigation.replace('Dashboard');
+      });
+  };
+
   const handleOnPress = () => {
     ref?.current?.focus();
   };
@@ -97,7 +134,7 @@ const Login = props => {
           />
         </View>
         <TouchableOpacity
-          onPress={() => props.navigation.replace('Dashboard')}
+          onPress={onLogin}
           style={{
             width: '95%',
             height: 35,
@@ -106,16 +143,20 @@ const Login = props => {
             backgroundColor: '#023866',
             justifyContent: 'center',
           }}>
-          <Text
-            style={{
-              alignSelf: 'center',
-              color: '#fff',
-              fontWeight: 'bold',
-              fontSize: 15,
-              letterSpacing: 1,
-            }}>
-            LOGIN
-          </Text>
+          {loader ? (
+            <ActivityIndicator color={'#fff'} />
+          ) : (
+            <Text
+              style={{
+                alignSelf: 'center',
+                color: '#fff',
+                fontWeight: 'bold',
+                fontSize: 15,
+                letterSpacing: 1,
+              }}>
+              LOGIN
+            </Text>
+          )}
         </TouchableOpacity>
         <View style={{alignItems: 'center', marginVertical: 10}}>
           <View style={{flexDirection: 'row', marginBottom: 5}}>

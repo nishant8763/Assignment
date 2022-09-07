@@ -10,30 +10,69 @@ import {
   TouchableOpacity,
   Pressable,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import MapView, {
   enableLatestRenderer,
   PROVIDER_GOOGLE,
 } from 'react-native-maps';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 enableLatestRenderer();
 const {height, width} = Dimensions.get('screen');
+
 const Maps = props => {
+  const [user, setUser] = useState(null);
+  const [loader, setLoader] = useState(true);
+  const [location, setLocation] = useState(null);
+  const MapDetails = async () => {
+    let userDetails = JSON.parse(await AsyncStorage.getItem('user'));
+    setUser(userDetails);
+
+    fetch(
+      'http://staging.infosmart.co.in/mapp/infoinsure/services/getCurrentLocation',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          authToken: userDetails?.authToken,
+          vehicleNo: userDetails?.policyDetails[0].vehicleNo,
+          vehicleId: '',
+          unitNo: '',
+        }),
+      },
+    )
+      .then(res => res.json())
+      .then(res => {
+        console.log(res);
+        setLocation(res);
+        setLoader(false);
+      });
+  };
+  useEffect(() => {
+    MapDetails();
+  }, []);
   return (
     <SafeAreaView>
       <StatusBar translucent backgroundColor="#023866" />
-      {/* <Text style={{marginTop: 78}}> hii</Text> */}
-      <View style={styles.container}>
-        <MapView
-          style={styles.map}
-          provider={PROVIDER_GOOGLE}
-          region={{
-            latitude: 37.78825,
-            longitude: -122.4324,
-            latitudeDelta: 0.015,
-            longitudeDelta: 0.0121,
-          }}></MapView>
-      </View>
+      {loader ? (
+        <ActivityIndicator />
+      ) : (
+        <View style={styles.container}>
+          <MapView
+            style={styles.map}
+            provider={PROVIDER_GOOGLE}
+            region={{
+              latitude: location?.lat,
+              longitude: location?.lon,
+              latitudeDelta: 0.015,
+              longitudeDelta: 0.0121,
+            }}></MapView>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
